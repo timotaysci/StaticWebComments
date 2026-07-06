@@ -18,7 +18,7 @@ First-party blog comments for **Azure Static Web Apps** — no third-party servi
 
 Built after one too many hosted comment services broke or was abandoned. ~200 lines of API you can read in one sitting.
 
-**See it live** on any post at [timothyjohnsonsci.com](https://timothyjohnsonsci.com/writing/) — and the full build story (dead vendors, the honeypot, the `admin*` route trap, the ROI maths) is written up here: [My Comment System Was Dead, So Claude and I Built a New One in an Afternoon](https://timothyjohnsonsci.com/writing/2026-07-06-building-first-party-comments-with-claude-code/).
+**See it live** on any post at [timothyjohnsonsci.com](https://timothyjohnsonsci.com/writing/) — and the full build story (dead vendors, the honeypot, the `admin*` route trap, the ROI maths) is written up here: [Has the build vs buy maths changed? A small, yet practical, example](https://timothyjohnsonsci.com/writing/2026-07-06-building-first-party-comments-with-claude-code/).
 
 ## Features
 
