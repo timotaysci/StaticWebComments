@@ -1,4 +1,18 @@
-# Static Web Comments
+<p align="center">
+  <img src="docs/logo.svg" width="120" alt="Static Web Comments logo — a speech bubble with a function bolt inside" />
+</p>
+
+<h1 align="center">Static Web Comments</h1>
+
+<p align="center">
+  <a href="https://github.com/timotaysci/StaticWebComments/actions/workflows/ci.yml"><img src="https://github.com/timotaysci/StaticWebComments/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2a78d6" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/node-%E2%89%A5%2020-339933" alt="Node 20 or later" />
+  <img src="https://img.shields.io/badge/runs%20on-Azure%20SWA%20Free%20tier-0078D4" alt="Runs on the Azure Static Web Apps Free tier" />
+  <img src="https://img.shields.io/badge/runtime%20cost-~%C2%A30%2Fmonth-2a9d3f" alt="Runtime cost approximately zero per month" />
+</p>
+
+<p align="center"><em>Own your comment box.</em></p>
 
 First-party blog comments for **Azure Static Web Apps** — no third-party service, no cookies, no tracking, and effectively no cost. The API runs on the managed Azure Functions that are already included in the SWA **Free tier**; comments live in an Azure Table Storage account that costs pennies per year at blog scale.
 

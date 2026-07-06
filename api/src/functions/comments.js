@@ -1,5 +1,6 @@
 const { app } = require('@azure/functions');
 const store = require('../lib/store');
+const { cleanText } = require('../lib/validate');
 
 const MAX_NICKNAME = Number(process.env.MAX_NICKNAME_LENGTH) || 50;
 const MAX_CONTENT = Number(process.env.MAX_CONTENT_LENGTH) || 4000;
@@ -16,18 +17,6 @@ const json = (status, body) => ({
   jsonBody: body,
   headers: { 'Cache-Control': 'no-store' },
 });
-
-function cleanText(value, maxLen) {
-  if (typeof value !== 'string') return '';
-  // strip control chars except tab, newline, carriage return
-  let out = '';
-  for (const ch of value) {
-    const c = ch.charCodeAt(0);
-    const isCtrl = (c < 32 && c !== 9 && c !== 10 && c !== 13) || c === 127;
-    if (!isCtrl) out += ch;
-  }
-  return out.trim().slice(0, maxLen);
-}
 
 function isValidPageId(pageId) {
   return typeof pageId === 'string' && PAGE_ID_PATTERN.test(pageId);

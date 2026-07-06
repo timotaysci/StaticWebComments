@@ -4,6 +4,9 @@
   "description": "First-party comments API for Azure Static Web Apps managed functions",
   "main": "src/functions/*.js",
   "license": "MIT",
+  "scripts": {
+    "test": "node --test test/"
+  },
   "engines": {
     "node": ">=20"
   },
