@@ -1,0 +1,17 @@
+{
+  "$comment": "Merge these keys into your existing staticwebapp.config.json. Route rules are evaluated in order — keep the moderation rules before any catch-alls.",
+  "platform": {
+    "apiRuntime": "node:20"
+  },
+  "routes": [
+    { "route": "/api/moderation*", "allowedRoles": ["moderator"] },
+    { "route": "/admin", "allowedRoles": ["moderator"] },
+    { "route": "/admin/*", "allowedRoles": ["moderator"] }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/github?post_login_redirect_uri=.referrer",
+      "statusCode": 302
+    }
+  }
+}

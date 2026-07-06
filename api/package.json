@@ -1,0 +1,14 @@
+{
+  "name": "static-web-comments-api",
+  "version": "1.0.0",
+  "description": "First-party comments API for Azure Static Web Apps managed functions",
+  "main": "src/functions/*.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.3.0",
+    "@azure/functions": "^4.6.0"
+  }
+}

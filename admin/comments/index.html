@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Comment moderation</title>
+  <style>
+    :root {
+      --text: #1a1a1a;
+      --text-soft: #555;
+      --border: #ddd;
+      --surface: #f6f6f4;
+      --accent: #2a78d6;
+      --danger: #c0564f;
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text: #e8e8e0;
+        --text-soft: #9a9a9a;
+        --border: #3a3a40;
+        --surface: #232328;
+      }
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text);
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+    }
+    h1 { margin: 0 0 0.5rem; }
+    h2 { font-size: 1.1rem; margin: 2rem 0 0.8rem; }
+    .toolbar { display: flex; align-items: center; gap: 1rem; }
+    .status { color: var(--text-soft); }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      padding: 0.8rem 1.1rem;
+      margin-bottom: 0.8rem;
+    }
+    .card header { font-size: 0.85em; color: var(--text-soft); margin-bottom: 0.3rem; }
+    .card header strong { color: var(--text); }
+    .card > p { margin: 0 0 0.6rem; white-space: pre-wrap; overflow-wrap: break-word; }
+    .actions { display: flex; gap: 0.5rem; margin: 0; }
+    button {
+      font: inherit;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: none;
+      color: var(--text);
+      padding: 0.3em 1em;
+      cursor: pointer;
+    }
+    button.approve { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.delete:hover { border-color: var(--danger); color: var(--danger); }
+    button:disabled { opacity: 0.5; cursor: default; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <h1>Comment moderation</h1>
+  <p class="toolbar">
+    <button id="refresh">Refresh</button>
+    <a href="/.auth/logout">Sign out</a>
+  </p>
+  <h2>Awaiting approval</h2>
+  <div id="queue" aria-live="polite"><p class="status">Loading&hellip;</p></div>
+  <h2>Published</h2>
+  <div id="published" aria-live="polite"><p class="status">Loading&hellip;</p></div>
+
+  <script>
+    const API = '/api/moderation';
+    const queue = document.getElementById('queue');
+    const published = document.getElementById('published');
+    const EMPTY_QUEUE = 'Queue is empty — nothing awaiting moderation.';
+    const EMPTY_PUBLISHED = 'No published comments yet.';
+
+    function statusMsg(container, text) {
+      container.textContent = '';
+      const p = document.createElement('p');
+      p.className = 'status';
+      p.textContent = text;
+      container.appendChild(p);
+    }
+
+    async function act(action, pk, id) {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, pk, id }),
+      });
+      if (!res.ok) throw new Error(`${action} failed (${res.status})`);
+    }
+
+    function buildCard(c, container, canApprove, emptyText) {
+      const card = document.createElement('article');
+      card.className = 'card';
+
+      const meta = document.createElement('header');
+      const who = document.createElement('strong');
+      who.textContent = c.nickname;
+      const where = document.createElement('a');
+      where.href = c.pageId;
+      where.textContent = c.pageTitle || c.pageId;
+      const when = document.createElement('time');
+      when.textContent = new Date(c.createdAt).toLocaleString();
+      meta.append(who, ' on ', where, ' — ', when);
+
+      const body = document.createElement('p');
+      body.textContent = c.content;
+
+      const actions = document.createElement('p');
+      actions.className = 'actions';
+      const buttons = [];
+
+      const done = () => {
+        card.remove();
+        if (!container.querySelector('.card')) statusMsg(container, emptyText);
+      };
+      const busy = (b) => buttons.forEach((btn) => (btn.disabled = b));
+
+      if (canApprove) {
+        const approve = document.createElement('button');
+        approve.className = 'approve';
+        approve.textContent = 'Approve';
+        approve.addEventListener('click', async () => {
+          busy(true);
+          try { await act('approve', c.pk, c.id); done(); load(); }
+          catch (e) { alert(e.message); busy(false); }
+        });
+        buttons.push(approve);
+      }
+
+      const del = document.createElement('button');
+      del.className = 'delete';
+      del.textContent = 'Delete';
+      del.addEventListener('click', async () => {
+        if (!confirm(`Delete comment by ${c.nickname}? This is permanent.`)) return;
+        busy(true);
+        try { await act('delete', c.pk, c.id); done(); }
+        catch (e) { alert(e.message); busy(false); }
+      });
+      buttons.push(del);
+
+      actions.append(...buttons);
+      card.append(meta, body, actions);
+      container.appendChild(card);
+    }
+
+    function renderSection(items, container, canApprove, emptyText) {
+      container.textContent = '';
+      if (!items.length) { statusMsg(container, emptyText); return; }
+      items.forEach((c) => buildCard(c, container, canApprove, emptyText));
+    }
+
+    async function load() {
+      try {
+        const res = await fetch(API);
+        if (res.status === 401 || res.status === 403 || res.redirected) {
+          statusMsg(queue, 'Not signed in as a moderator.');
+          published.textContent = '';
+          const a = document.createElement('a');
+          a.href = '/.auth/login/github?post_login_redirect_uri=' + encodeURIComponent(location.pathname);
+          a.textContent = 'Sign in with GitHub';
+          queue.appendChild(a);
+          return;
+        }
+        if (!res.ok) throw new Error(`load failed (${res.status})`);
+        const data = await res.json();
+        renderSection(data.pending, queue, true, EMPTY_QUEUE);
+        renderSection(data.approved, published, false, EMPTY_PUBLISHED);
+      } catch (e) {
+        statusMsg(queue, `Could not load: ${e.message}`);
+        statusMsg(published, '');
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', load);
+    load();
+  </script>
+</body>
+</html>

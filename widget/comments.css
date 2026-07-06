@@ -1,0 +1,128 @@
+/* Static Web Comments — widget styles.
+   Theme by overriding the custom properties on [data-swc-comments]. */
+
+[data-swc-comments] {
+  --swc-text: #1a1a1a;
+  --swc-text-soft: #555;
+  --swc-border: #ddd;
+  --swc-surface: #fff;
+  --swc-accent: #2a78d6;
+  --swc-accent-text: #fff;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--swc-text);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-swc-comments] {
+    --swc-text: #e8e8e0;
+    --swc-text-soft: #9a9a9a;
+    --swc-border: #3a3a40;
+    --swc-surface: #232328;
+    --swc-accent: #3987e5;
+    --swc-accent-text: #16161a;
+  }
+}
+
+.swc-note {
+  color: var(--swc-text-soft);
+}
+
+.swc-comment {
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--swc-border);
+}
+
+.swc-comment header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.swc-comment header time {
+  color: var(--swc-text-soft);
+  font-size: 0.8em;
+}
+
+.swc-comment p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.swc-form {
+  margin-top: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.swc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.swc-field span {
+  color: var(--swc-text-soft);
+  font-size: 0.8em;
+}
+
+.swc-field input,
+.swc-field textarea {
+  font: inherit;
+  color: var(--swc-text);
+  background: var(--swc-surface);
+  border: 1px solid var(--swc-border);
+  border-radius: 4px;
+  padding: 0.5em 0.65em;
+  max-width: 100%;
+}
+
+.swc-field input {
+  max-width: 280px;
+}
+
+.swc-field input:focus,
+.swc-field textarea:focus {
+  outline: none;
+  border-color: var(--swc-accent);
+}
+
+/* Honeypot: offscreen, not display:none — smarter bots skip hidden fields */
+.swc-website {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+}
+
+.swc-submit {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 600;
+  background: var(--swc-accent);
+  color: var(--swc-accent-text);
+  border: none;
+  border-radius: 4px;
+  padding: 0.55em 1.4em;
+  cursor: pointer;
+}
+
+.swc-submit:hover {
+  opacity: 0.9;
+}
+
+.swc-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.swc-status {
+  color: var(--swc-text-soft);
+  margin: 0;
+  min-height: 1.2em;
+}
