@@ -118,6 +118,8 @@ App settings on the Static Web App (Portal → Environment variables, or `az sta
 | `MAX_PENDING_PER_PAGE` | no | `25` | Flood guard threshold |
 | `REACTION_EMOJIS` | no | `👍,❤️,💡` | Comma-separated reaction set (mirror it in the widget's `data-reactions`) |
 | `MAX_REACTIONS_PER_TARGET` | no | `500` | Cap on reactions per comment/page |
+| `NTFY_REACTIONS` | no | on | Set to `off` to keep ntfy pushes for comments only |
+| `SITE_URL` | no | — | Origin used for reaction notifications' click-through (e.g. `https://example.com`) |
 
 ## Security model
 

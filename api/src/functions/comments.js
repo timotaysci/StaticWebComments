@@ -64,15 +64,19 @@ app.http('comments', {
       // NTFY_TOPIC app setting. Failures never affect the response.
       if (process.env.NTFY_TOPIC) {
         try {
-          const headers = {
-            Title: `New comment on ${pageTitle || pageId}`,
-            Tags: 'speech_balloon',
+          const payload = {
+            topic: process.env.NTFY_TOPIC,
+            title: `New comment on ${pageTitle || pageId}`,
+            message: `${nickname}: ${content.slice(0, 200)}`,
+            tags: ['speech_balloon'],
           };
-          if (process.env.ADMIN_URL) headers.Click = process.env.ADMIN_URL;
-          await fetch(`https://ntfy.sh/${process.env.NTFY_TOPIC}`, {
+          if (process.env.ADMIN_URL) payload.click = process.env.ADMIN_URL;
+          // JSON publish API: HTTP headers are Latin-1 only, so any
+          // non-ASCII page title in a Title header would throw.
+          await fetch('https://ntfy.sh', {
             method: 'POST',
-            headers,
-            body: `${nickname}: ${content.slice(0, 200)}`,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
           });
         } catch (e) {
           context.log('ntfy notification failed:', e.message);

@@ -117,7 +117,7 @@
             const res = await fetch(apiBase + '/reactions', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ pageId, targetId, emoji }),
+              body: JSON.stringify({ pageId, targetId, emoji, pageTitle }),
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.receipt) {

@@ -47,6 +47,36 @@ app.http('reactions', {
       }
 
       const receipt = await store.addReaction({ pageId, targetId, emoji });
+
+      // Low-priority push on new reactions (never on removal), if ntfy is
+      // configured and NTFY_REACTIONS isn't 'off'. Failures never affect
+      // the response.
+      if (process.env.NTFY_TOPIC && process.env.NTFY_REACTIONS !== 'off') {
+        try {
+          const pageTitle =
+            typeof body.pageTitle === 'string' ? body.pageTitle.slice(0, 200) : '';
+          const payload = {
+            topic: process.env.NTFY_TOPIC,
+            title: `New reaction: ${emoji}`,
+            message: `${emoji} on ${targetId === '_post' ? (pageTitle || pageId) : `a comment (${pageTitle || pageId})`}`,
+            priority: 2,
+            tags: ['sparkles'],
+          };
+          if (process.env.SITE_URL) {
+            payload.click = process.env.SITE_URL.replace(/\/$/, '') + pageId;
+          }
+          // JSON publish API: HTTP headers are Latin-1 only, so emoji/UTF-8
+          // in Title headers throws — the JSON body has no such limit.
+          await fetch('https://ntfy.sh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+        } catch (e) {
+          context.log('ntfy reaction notification failed:', e.message);
+        }
+      }
+
       return json(201, { receipt });
     } catch (e) {
       context.error('reactions handler failed:', e);
