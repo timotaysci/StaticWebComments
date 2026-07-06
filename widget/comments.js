@@ -10,6 +10,9 @@
  *   data-page-id     unique thread key (default: location.pathname)
  *   data-page-title  shown in notifications (default: document.title)
  *   data-api-base    API prefix (default: /api)
+ *   data-reactions   comma-separated emoji set (default: 👍,❤️,💡 —
+ *                    must match the API's REACTION_EMOJIS setting);
+ *                    set to "off" to disable reactions entirely
  *
  * All user content is rendered with textContent — never innerHTML.
  */
@@ -21,7 +24,17 @@
   const pageTitle = container.getAttribute('data-page-title') || document.title;
   const apiBase = container.getAttribute('data-api-base') || '/api';
 
+  const reactionsAttr = container.getAttribute('data-reactions') || '';
+  const reactionsEnabled = reactionsAttr.trim().toLowerCase() !== 'off';
+  const EMOJIS = reactionsAttr && reactionsEnabled
+    ? reactionsAttr.split(',').map((s) => s.trim()).filter(Boolean)
+    : ['\u{1F44D}', '❤️', '\u{1F4A1}'];
+  const receiptsKey = 'swc-react:' + pageId;
+
   // --- build DOM -----------------------------------------------------
+  const postReactions = document.createElement('div');
+  postReactions.className = 'swc-post-reactions';
+
   const list = document.createElement('div');
   list.className = 'swc-list';
   list.setAttribute('aria-live', 'polite');
@@ -41,9 +54,91 @@
     '<p class="swc-status" role="status"></p>',
   ].join('');
 
-  container.append(list, form);
+  container.append(postReactions, list, form);
   const statusEl = form.querySelector('.swc-status');
   const submitBtn = form.querySelector('.swc-submit');
+
+  // --- reactions -----------------------------------------------------
+  function getReceipts() {
+    try {
+      return JSON.parse(localStorage.getItem(receiptsKey) || '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  function setReceipts(r) {
+    localStorage.setItem(receiptsKey, JSON.stringify(r));
+  }
+
+  function buildChips(targetId, counts) {
+    counts = counts || {};
+    const row = document.createElement('div');
+    row.className = 'swc-react-row';
+    for (const emoji of EMOJIS) {
+      const key = targetId + '|' + emoji;
+      let count = counts[emoji] || 0;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'swc-react-chip';
+      btn.setAttribute('aria-label', 'React with ' + emoji);
+      const glyph = document.createElement('span');
+      glyph.textContent = emoji;
+      const num = document.createElement('span');
+      num.className = 'swc-react-count';
+      btn.append(glyph, num);
+
+      const paint = () => {
+        btn.setAttribute('aria-pressed', String(Boolean(getReceipts()[key])));
+        num.textContent = String(count);
+      };
+      paint();
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const r = getReceipts();
+        try {
+          if (r[key]) {
+            // un-react: optimistic, receipt-based, idempotent server-side
+            const receipt = r[key];
+            delete r[key];
+            setReceipts(r);
+            count = Math.max(0, count - 1);
+            paint();
+            await fetch(apiBase + '/reactions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pageId, remove: true, receipt }),
+            });
+          } else {
+            count += 1;
+            paint();
+            const res = await fetch(apiBase + '/reactions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pageId, targetId, emoji }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.receipt) {
+              r[key] = data.receipt;
+              setReceipts(r);
+            } else {
+              count = Math.max(0, count - 1); // revert optimism
+            }
+            paint();
+          }
+        } catch {
+          paint();
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      row.appendChild(btn);
+    }
+    return row;
+  }
 
   // --- render --------------------------------------------------------
   function note(text) {
@@ -54,7 +149,12 @@
     list.appendChild(p);
   }
 
-  function render(comments) {
+  function render(comments, reactions) {
+    reactions = reactions || {};
+    if (reactionsEnabled) {
+      postReactions.textContent = '';
+      postReactions.appendChild(buildChips('_post', reactions['_post']));
+    }
     if (!comments.length) {
       note('No comments yet — be the first.');
       return;
@@ -77,6 +177,7 @@
       const body = document.createElement('p');
       body.textContent = c.content;
       item.append(head, body);
+      if (reactionsEnabled) item.appendChild(buildChips(c.id, reactions[c.id]));
       list.appendChild(item);
     }
   }
@@ -84,11 +185,11 @@
   async function load() {
     try {
       const res = await fetch(
-        `${apiBase}/comments?pageId=${encodeURIComponent(pageId)}`
+        apiBase + '/comments?pageId=' + encodeURIComponent(pageId)
       );
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
-      render(data.comments);
+      render(data.comments, data.reactions);
     } catch {
       note('Comments are unavailable right now.');
     }
@@ -102,7 +203,7 @@
     submitBtn.disabled = true;
     statusEl.textContent = 'Posting…';
     try {
-      const res = await fetch(`${apiBase}/comments`, {
+      const res = await fetch(apiBase + '/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -118,7 +219,7 @@
       statusEl.textContent = 'Thanks! Your comment will appear once approved.';
       form.querySelector('[name="content"]').value = '';
     } catch (err) {
-      statusEl.textContent = `Could not post comment: ${err.message}`;
+      statusEl.textContent = 'Could not post comment: ' + err.message;
     } finally {
       submitBtn.disabled = false;
     }

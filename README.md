@@ -27,6 +27,7 @@ Built after one too many hosted comment services broke or was abandoned. ~200 li
 - **Honeypot spam trap** — a hidden field bots fill in; the server silently discards their submission while telling them it succeeded
 - **Flood guard** — a page stops accepting new comments once too many sit unmoderated
 - **Moderation page** — approve/delete queued comments and delete published ones, gated behind SWA's built-in GitHub login with a `moderator` role
+- **Reactions** (👍 ❤️ 💡) — anonymous reaction chips on the page and on each comment; a receipt kept in the reader's own localStorage allows un-reacting, and no visitor identifier ever exists server-side. Emoji set is configurable; set `data-reactions="off"` on the widget to disable
 - **Push notifications** (optional) — new comments ping your phone via [ntfy](https://ntfy.sh) with a tap-through to the moderation queue
 - **Framework-free widget** — a drop-in `<div>` + script for any static site; all user content rendered via `textContent` (no HTML injection)
 
@@ -115,6 +116,8 @@ App settings on the Static Web App (Portal → Environment variables, or `az sta
 | `MAX_NICKNAME_LENGTH` | no | `50` | |
 | `MAX_CONTENT_LENGTH` | no | `4000` | |
 | `MAX_PENDING_PER_PAGE` | no | `25` | Flood guard threshold |
+| `REACTION_EMOJIS` | no | `👍,❤️,💡` | Comma-separated reaction set (mirror it in the widget's `data-reactions`) |
+| `MAX_REACTIONS_PER_TARGET` | no | `500` | Cap on reactions per comment/page |
 
 ## Security model
 
@@ -123,6 +126,7 @@ App settings on the Static Web App (Portal → Environment variables, or `az sta
 - **Role gating twice**: SWA route rules block `/api/moderation*` at the edge for anyone without the `moderator` role, and the function re-checks the `x-ms-client-principal` header in code.
 - **Output safety**: the widget and moderation page only ever render user content with `textContent`.
 - **Data minimisation**: name, comment text, page, timestamp. No email requested, no IP recorded — your privacy policy gets shorter, not longer.
+- **Reactions are honest-but-approximate**: with no visitor identity there is no server-side dedup, by design. Counts are bounded by the emoji allowlist, target validation, and the per-target cap; a reader's own reactions are remembered only in their browser's localStorage.
 
 ## Gotchas (learned the hard way)
 

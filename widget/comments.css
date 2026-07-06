@@ -28,6 +28,54 @@
   color: var(--swc-text-soft);
 }
 
+.swc-post-reactions {
+  margin-bottom: 1rem;
+}
+
+.swc-react-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.swc-post-reactions .swc-react-row {
+  margin-top: 0;
+}
+
+.swc-react-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font: inherit;
+  font-size: 0.8em;
+  color: var(--swc-text-soft);
+  background: none;
+  border: 1px solid var(--swc-border);
+  border-radius: 999px;
+  padding: 0.2em 0.7em;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+}
+
+.swc-react-chip:hover {
+  border-color: var(--swc-accent);
+  color: var(--swc-text);
+}
+
+.swc-react-chip[aria-pressed='true'] {
+  border-color: var(--swc-accent);
+  background: var(--swc-surface);
+  color: var(--swc-text);
+}
+
+.swc-react-chip:disabled {
+  opacity: 0.6;
+}
+
+.swc-react-count {
+  font-variant-numeric: tabular-nums;
+}
+
 .swc-comment {
   padding: 0.8rem 0;
   border-bottom: 1px solid var(--swc-border);

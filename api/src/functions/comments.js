@@ -1,26 +1,16 @@
 const { app } = require('@azure/functions');
 const store = require('../lib/store');
-const { cleanText } = require('../lib/validate');
+const { cleanText, isValidPageId } = require('../lib/validate');
 
 const MAX_NICKNAME = Number(process.env.MAX_NICKNAME_LENGTH) || 50;
 const MAX_CONTENT = Number(process.env.MAX_CONTENT_LENGTH) || 4000;
 const MAX_PENDING_PER_PAGE = Number(process.env.MAX_PENDING_PER_PAGE) || 25;
-
-// Which page paths may receive comments. Tighten this to your content
-// paths (e.g. '^/blog/[a-z0-9-]+/$') so bots can't create junk partitions.
-const PAGE_ID_PATTERN = new RegExp(
-  process.env.PAGE_ID_PATTERN || '^/[a-zA-Z0-9/_-]{1,200}$'
-);
 
 const json = (status, body) => ({
   status,
   jsonBody: body,
   headers: { 'Cache-Control': 'no-store' },
 });
-
-function isValidPageId(pageId) {
-  return typeof pageId === 'string' && PAGE_ID_PATTERN.test(pageId);
-}
 
 app.http('comments', {
   route: 'comments',
@@ -31,7 +21,11 @@ app.http('comments', {
       if (request.method === 'GET') {
         const pageId = request.query.get('pageId') || '';
         if (!isValidPageId(pageId)) return json(400, { error: 'invalid pageId' });
-        return json(200, { comments: await store.listApproved(pageId) });
+        const [comments, reactions] = await Promise.all([
+          store.listApproved(pageId),
+          store.listReactions(pageId),
+        ]);
+        return json(200, { comments, reactions });
       }
 
       // POST — submit a comment

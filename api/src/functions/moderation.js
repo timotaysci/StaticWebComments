@@ -42,6 +42,8 @@ app.http('moderation', {
         return json(200, { ok: true });
       }
       if (action === 'delete') {
+        // reactions on the comment go with it
+        await store.deleteReactionsFor(pk, id);
         await store.deleteComment(pk, id);
         return json(200, { ok: true });
       }
